@@ -1,0 +1,7 @@
+includes:
+    - base.neon
+
+parameters:
+    level: 6
+    reportUnmatchedIgnoredErrors: false
+    treatPhpDocTypesAsCertain: false

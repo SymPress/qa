@@ -1,0 +1,9 @@
+parameters:
+    level: max
+    paths:
+        - bin/sympress-qa
+        - src
+        - tests
+    bootstrapFiles:
+        - tests/bootstrap.php
+    treatPhpDocTypesAsCertain: false

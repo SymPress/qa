@@ -1,0 +1,74 @@
+{
+    "name": "sympress/qa",
+    "description": "Shared QA tooling for SymPress packages.",
+    "type": "library",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Brian Schaffner",
+            "email": "brian.schaeffner@sympress.de",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.5",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.2",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpunit/phpunit": "^10.5 || ^11.5",
+        "symfony/console": "^8.0",
+        "symfony/filesystem": "^8.0",
+        "symfony/process": "^8.0",
+        "szepeviktor/phpstan-wordpress": "^2.0",
+        "sympress/coding-standards": "^1.0 || dev-main"
+    },
+    "autoload": {
+        "psr-4": {
+            "SymPress\\Qa\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SymPress\\Qa\\Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/sympress-qa"
+    ],
+    "scripts": {
+        "cs": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php bin/sympress-qa cs"
+        ],
+        "cs:fix": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php bin/sympress-qa cs:fix"
+        ],
+        "static-analysis": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php bin/sympress-qa static-analysis"
+        ],
+        "tests": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php bin/sympress-qa tests"
+        ],
+        "test": [
+            "@tests"
+        ],
+        "qa": [
+            "@cs",
+            "@static-analysis",
+            "@tests"
+        ]
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "phpstan/extension-installer": true
+        },
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "prefer-stable": true
+}

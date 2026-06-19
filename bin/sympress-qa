@@ -1,0 +1,41 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use SymPress\Qa\Console\ApplicationFactory;
+
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+
+$autoloadCandidates = [
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../../vendor/autoload.php',
+    getcwd() . '/vendor/autoload.php',
+];
+
+foreach ($autoloadCandidates as $autoloadCandidate) {
+    if (is_readable($autoloadCandidate)) {
+        require $autoloadCandidate;
+        break;
+    }
+}
+
+spl_autoload_register(static function (string $class): void {
+    $prefix = 'SymPress\\Qa\\';
+
+    if (!str_starts_with($class, $prefix)) {
+        return;
+    }
+
+    $file = __DIR__ . '/../src/' . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php';
+    if (is_readable($file)) {
+        require $file;
+    }
+});
+
+if (!class_exists(ApplicationFactory::class)) {
+    fwrite(STDERR, "Could not load sympress/qa. Run composer install first.\n");
+    exit(1);
+}
+
+exit(ApplicationFactory::create()->run());
