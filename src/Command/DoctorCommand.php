@@ -208,20 +208,20 @@ final class DoctorCommand extends AbstractPackageCommand
     {
         $script = implode("\n", $this->scriptCommands($scripts, 'qa'));
 
-        if (str_contains($script, 'sympress-qa qa')) {
+        if (str_contains($script, 'qa qa')) {
             return true;
         }
 
         return match ($gate) {
-            'cs' => str_contains($script, '@cs') || str_contains($script, 'sympress-qa cs') || str_contains($script, 'phpcs'),
+            'cs' => str_contains($script, '@cs') || str_contains($script, 'qa cs') || str_contains($script, 'phpcs'),
             'static-analysis' => str_contains($script, '@static-analysis')
-                || str_contains($script, 'sympress-qa static-analysis')
+                || str_contains($script, 'qa static-analysis')
                 || str_contains($script, 'phpstan'),
             'tests' => str_contains($script, '@tests')
                 || str_contains($script, '@test')
-                || str_contains($script, 'sympress-qa tests')
+                || str_contains($script, 'qa tests')
                 || str_contains($script, 'phpunit'),
-            default => str_contains($script, '@' . $gate) || str_contains($script, 'sympress-qa ' . $gate),
+            default => str_contains($script, '@' . $gate) || str_contains($script, 'qa ' . $gate),
         };
     }
 

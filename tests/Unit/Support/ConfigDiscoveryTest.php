@@ -13,7 +13,7 @@ final class ConfigDiscoveryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->workspace = sys_get_temp_dir() . '/sympress-qa-config-' . bin2hex(random_bytes(8));
+        $this->workspace = sys_get_temp_dir() . '/sympress-quality-config-' . bin2hex(random_bytes(8));
         self::assertTrue(mkdir($this->workspace));
     }
 

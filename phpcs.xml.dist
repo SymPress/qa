@@ -10,7 +10,7 @@
 
     <config name="testVersion" value="8.5-" />
 
-    <file>bin/sympress-qa</file>
+    <file>bin/qa</file>
     <file>src</file>
     <file>tests</file>
 

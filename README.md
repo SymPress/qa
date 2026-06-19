@@ -2,7 +2,7 @@
 
 Shared QA tooling for SymPress packages.
 
-This package does not replace `sympress/coding-standards`. The coding standards package remains responsible for PHPCS rulesets and custom sniffs. `sympress/qa` provides the shared toolchain, PHPStan defaults, PHPUnit templates, and the `sympress-qa` runner used by package scripts and CI.
+This package does not replace `sympress/coding-standards`. The coding standards package remains responsible for PHPCS rulesets and custom sniffs. `sympress/qa` provides the shared toolchain, PHPStan defaults, PHPUnit templates, and the `qa` runner used by package scripts and CI.
 
 The runner is a Symfony Console application and uses Symfony Process for tool execution. It is designed to behave the same in a standalone split package, in the SymPress monorepo, and inside CI containers.
 
@@ -23,10 +23,10 @@ Recommended package scripts:
 ```json
 {
   "scripts": {
-    "cs": "sympress-qa cs",
-    "cs:fix": "sympress-qa cs:fix",
-    "static-analysis": "sympress-qa static-analysis",
-    "tests": "sympress-qa tests",
+    "cs": "qa cs",
+    "cs:fix": "qa cs:fix",
+    "static-analysis": "qa static-analysis",
+    "tests": "qa tests",
     "test": "@tests",
     "qa": [
       "@cs",
@@ -42,12 +42,12 @@ Packages can still keep custom implementations behind the same script names. CI 
 ## Commands
 
 ```bash
-vendor/bin/sympress-qa cs
-vendor/bin/sympress-qa cs:fix
-vendor/bin/sympress-qa static-analysis
-vendor/bin/sympress-qa tests
-vendor/bin/sympress-qa qa
-vendor/bin/sympress-qa doctor --strict
+vendor/bin/qa cs
+vendor/bin/qa cs:fix
+vendor/bin/qa static-analysis
+vendor/bin/qa tests
+vendor/bin/qa qa
+vendor/bin/qa doctor --strict
 ```
 
 Missing PHPStan or PHPUnit configuration is skipped by the runner. Use `doctor --strict` with an adoption file when a package is ready to make a gate mandatory.
@@ -64,8 +64,8 @@ composer qa
 Packages that need custom behavior can keep the same Composer script names and wrap custom commands behind them. The runner also supports direct package targeting from a monorepo root:
 
 ```bash
-php packages/qa/bin/sympress-qa qa --package=packages/kernel
-php packages/qa/bin/sympress-qa doctor --strict --package=packages/kernel
+php packages/qa/bin/qa qa --package=packages/kernel
+php packages/qa/bin/qa doctor --strict --package=packages/kernel
 ```
 
 `doctor --strict` checks only configured required gates. Missing optional gates are reported as planned work when an adoption file is present; without one, `cs` is the only required default.

@@ -34,24 +34,24 @@
         }
     },
     "bin": [
-        "bin/sympress-qa"
+        "bin/qa"
     ],
     "scripts": {
         "cs": [
             "Composer\\Config::disableProcessTimeout",
-            "@php bin/sympress-qa cs"
+            "@php bin/qa cs"
         ],
         "cs:fix": [
             "Composer\\Config::disableProcessTimeout",
-            "@php bin/sympress-qa cs:fix"
+            "@php bin/qa cs:fix"
         ],
         "static-analysis": [
             "Composer\\Config::disableProcessTimeout",
-            "@php bin/sympress-qa static-analysis"
+            "@php bin/qa static-analysis"
         ],
         "tests": [
             "Composer\\Config::disableProcessTimeout",
-            "@php bin/sympress-qa tests"
+            "@php bin/qa tests"
         ],
         "test": [
             "@tests"

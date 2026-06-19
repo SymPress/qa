@@ -1,7 +1,7 @@
 parameters:
     level: max
     paths:
-        - bin/sympress-qa
+        - bin/qa
         - src
         - tests
     bootstrapFiles:

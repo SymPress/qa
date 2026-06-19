@@ -1,6 +1,6 @@
 # QA Adoption
 
-`sympress-qa doctor --strict` checks required gates from an adoption file instead of assuming every package must immediately have PHPStan and PHPUnit.
+`qa doctor --strict` checks required gates from an adoption file instead of assuming every package must immediately have PHPStan and PHPUnit.
 
 The default project-level file is:
 

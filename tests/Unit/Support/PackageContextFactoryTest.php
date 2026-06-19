@@ -13,7 +13,7 @@ final class PackageContextFactoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->workspace = sys_get_temp_dir() . '/sympress-qa-context-' . bin2hex(random_bytes(8));
+        $this->workspace = sys_get_temp_dir() . '/sympress-quality-context-' . bin2hex(random_bytes(8));
         self::assertTrue(mkdir($this->workspace));
     }
 
