@@ -7,6 +7,7 @@ namespace SymPress\Qa\Command;
 use SymPress\Qa\Runner\ToolRunner;
 use SymPress\Qa\Support\PackageContextFactory;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -26,11 +27,17 @@ final class ToolCommand extends AbstractPackageCommand
     {
         $this
             ->setDescription($this->description)
+            ->addOption('strict', null, InputOption::VALUE_NONE, 'Fail instead of skipping an unavailable gate.')
             ->configurePackageOption();
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        return $this->toolRunner->run($this->gate, $this->packageContext($input), new SymfonyStyle($input, $output));
+        return $this->toolRunner->run(
+            $this->gate,
+            $this->packageContext($input),
+            new SymfonyStyle($input, $output),
+            $input->getOption('strict') === true,
+        );
     }
 }

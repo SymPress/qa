@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SymPress\Qa\Command;
 
 use JsonException;
+use RuntimeException;
 use SymPress\Qa\Support\ConfigDiscovery;
 use SymPress\Qa\Support\PackageContextFactory;
 use Symfony\Component\Console\Input\InputInterface;
@@ -48,7 +49,13 @@ final class DoctorCommand extends AbstractPackageCommand
             ? $composer['name']
             : basename($packageDir);
         $scripts = $this->stringKeyArray($composer['scripts'] ?? null);
-        $adoption = $this->loadAdoption($input, $packageDir, $context->projectDir());
+        try {
+            $adoption = $this->loadAdoption($input, $packageDir, $context->projectDir());
+        } catch (RuntimeException $exception) {
+            $style->error($exception->getMessage());
+
+            return self::FAILURE;
+        }
         $requiredGates = $this->adoptionGates($adoption, $packageName, $context->relativePackageDir(), 'required');
         $plannedGates = $this->adoptionGates($adoption, $packageName, $context->relativePackageDir(), 'planned');
         $errors = [];
@@ -106,7 +113,12 @@ final class DoctorCommand extends AbstractPackageCommand
         $candidates = [];
 
         if (is_string($configuredFile) && $configuredFile !== '') {
-            $candidates[] = $this->resolvePath($configuredFile, (string) getcwd());
+            $configuredFile = $this->resolvePath($configuredFile, (string) getcwd());
+            if (!is_readable($configuredFile)) {
+                throw new RuntimeException(sprintf('QA adoption file %s is not readable.', $configuredFile));
+            }
+
+            $candidates[] = $configuredFile;
         }
 
         $candidates[] = $projectDir . '/docs/qa-adoption.json';
@@ -119,12 +131,16 @@ final class DoctorCommand extends AbstractPackageCommand
             }
 
             try {
-                $decoded = json_decode((string) file_get_contents($candidate), true, 512, JSON_THROW_ON_ERROR);
-            } catch (JsonException) {
-                return $this->defaultAdoption();
+                $decoded = json_decode((string) file_get_contents($candidate), false, 512, JSON_THROW_ON_ERROR);
+            } catch (JsonException $exception) {
+                throw new RuntimeException(
+                    sprintf('Invalid QA adoption file %s: %s', $candidate, $exception->getMessage()),
+                    0,
+                    $exception,
+                );
             }
 
-            return $this->stringKeyArray($decoded);
+            return $this->validateAdoption($decoded, $candidate);
         }
 
         return $this->defaultAdoption();
@@ -162,11 +178,111 @@ final class DoctorCommand extends AbstractPackageCommand
             return $defaults;
         }
 
-        $configured = $this->gateList($packageAdoption[$key] ?? null);
+        return $this->gateList($packageAdoption[$key] ?? null);
+    }
 
-        return $configured === [] && $key === 'required'
-            ? $defaults
-            : $configured;
+    /** @return array<string, mixed> */
+    private function validateAdoption(mixed $decoded, string $candidate): array
+    {
+        if (!$decoded instanceof \stdClass) {
+            throw $this->invalidAdoption($candidate, 'the root value must be an object');
+        }
+
+        /** @var array<string, mixed> $root */
+        $root = get_object_vars($decoded);
+        $this->assertKeys($root, ['$schema', 'version', 'defaults', 'packages'], $candidate, 'root');
+
+        foreach (['version', 'defaults', 'packages'] as $required) {
+            if (!array_key_exists($required, $root)) {
+                throw $this->invalidAdoption($candidate, "missing required root property {$required}");
+            }
+        }
+
+        if (array_key_exists('$schema', $root) && !is_string($root['$schema'])) {
+            throw $this->invalidAdoption($candidate, '$schema must be a string');
+        }
+
+        if ($root['version'] !== 1) {
+            throw new RuntimeException(sprintf('Unsupported QA adoption version in %s; expected version 1.', $candidate));
+        }
+
+        if (!$root['packages'] instanceof \stdClass) {
+            throw $this->invalidAdoption($candidate, 'packages must be an object');
+        }
+
+        $packages = [];
+        foreach (get_object_vars($root['packages']) as $package => $gates) {
+            $packages[$package] = $this->validateGateConfiguration($gates, $candidate, "packages.{$package}");
+        }
+
+        return [
+            'version'  => 1,
+            'defaults' => $this->validateGateConfiguration($root['defaults'], $candidate, 'defaults'),
+            'packages' => $packages,
+        ];
+    }
+
+    /** @return array{required: list<string>, planned: list<string>} */
+    private function validateGateConfiguration(mixed $decoded, string $candidate, string $path): array
+    {
+        if (!$decoded instanceof \stdClass) {
+            throw $this->invalidAdoption($candidate, "{$path} must be an object");
+        }
+
+        /** @var array<string, mixed> $gates */
+        $gates = get_object_vars($decoded);
+        $this->assertKeys($gates, ['required', 'planned'], $candidate, $path);
+
+        foreach (['required', 'planned'] as $required) {
+            if (!array_key_exists($required, $gates)) {
+                throw $this->invalidAdoption($candidate, "{$path} is missing required property {$required}");
+            }
+        }
+
+        return [
+            'required' => $this->validateGateList($gates['required'], $candidate, "{$path}.required"),
+            'planned'  => $this->validateGateList($gates['planned'], $candidate, "{$path}.planned"),
+        ];
+    }
+
+    /** @return list<string> */
+    private function validateGateList(mixed $decoded, string $candidate, string $path): array
+    {
+        if (!is_array($decoded) || !array_is_list($decoded)) {
+            throw $this->invalidAdoption($candidate, "{$path} must be an array");
+        }
+
+        foreach ($decoded as $gate) {
+            if (!is_string($gate) || $gate === '') {
+                throw $this->invalidAdoption($candidate, "{$path} must contain only non-empty strings");
+            }
+        }
+
+        if (count(array_unique($decoded)) !== count($decoded)) {
+            throw $this->invalidAdoption($candidate, "{$path} must not contain duplicates");
+        }
+
+        return $decoded;
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     * @param list<string> $allowed
+     */
+    private function assertKeys(array $values, array $allowed, string $candidate, string $path): void
+    {
+        $unknown = array_diff(array_keys($values), $allowed);
+        if ($unknown !== []) {
+            throw $this->invalidAdoption(
+                $candidate,
+                sprintf('%s contains unknown property %s', $path, (string) reset($unknown)),
+            );
+        }
+    }
+
+    private function invalidAdoption(string $candidate, string $reason): RuntimeException
+    {
+        return new RuntimeException(sprintf('Invalid QA adoption file %s: %s.', $candidate, $reason));
     }
 
     /** @return list<string> */

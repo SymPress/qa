@@ -39,7 +39,7 @@
     "scripts": {
         "cs": [
             "Composer\\Config::disableProcessTimeout",
-            "@php bin/qa cs"
+            "@php bin/qa cs --strict"
         ],
         "cs:fix": [
             "Composer\\Config::disableProcessTimeout",
@@ -47,16 +47,17 @@
         ],
         "static-analysis": [
             "Composer\\Config::disableProcessTimeout",
-            "@php bin/qa static-analysis"
+            "@php bin/qa static-analysis --strict"
         ],
         "tests": [
             "Composer\\Config::disableProcessTimeout",
-            "@php bin/qa tests"
+            "@php bin/qa tests --strict"
         ],
         "test": [
             "@tests"
         ],
         "qa": [
+            "@php bin/qa doctor --strict",
             "@cs",
             "@static-analysis",
             "@tests"

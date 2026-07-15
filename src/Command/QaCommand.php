@@ -7,6 +7,7 @@ namespace SymPress\Qa\Command;
 use SymPress\Qa\Runner\ToolRunner;
 use SymPress\Qa\Support\PackageContextFactory;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -24,6 +25,7 @@ final class QaCommand extends AbstractPackageCommand
     {
         $this
             ->setDescription('Run the package quality gate.')
+            ->addOption('strict', null, InputOption::VALUE_NONE, 'Fail instead of skipping unavailable gates.')
             ->configurePackageOption();
     }
 
@@ -33,7 +35,7 @@ final class QaCommand extends AbstractPackageCommand
         $context = $this->packageContext($input);
 
         foreach (['cs', 'static-analysis', 'tests'] as $gate) {
-            $exitCode = $this->toolRunner->run($gate, $context, $style);
+            $exitCode = $this->toolRunner->run($gate, $context, $style, $input->getOption('strict') === true);
 
             if ($exitCode !== self::SUCCESS) {
                 return $exitCode;

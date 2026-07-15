@@ -1,0 +1,55 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/sympress/qa/main/docs/qa-adoption.schema.json",
+    "title": "SymPress QA adoption",
+    "type": "object",
+    "properties": {
+        "$schema": {
+            "type": "string"
+        },
+        "version": {
+            "const": 1
+        },
+        "defaults": {
+            "$ref": "#/$defs/gates"
+        },
+        "packages": {
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/$defs/gates"
+            }
+        }
+    },
+    "required": [
+        "version",
+        "defaults",
+        "packages"
+    ],
+    "additionalProperties": false,
+    "$defs": {
+        "gateList": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minLength": 1
+            },
+            "uniqueItems": true
+        },
+        "gates": {
+            "type": "object",
+            "properties": {
+                "required": {
+                    "$ref": "#/$defs/gateList"
+                },
+                "planned": {
+                    "$ref": "#/$defs/gateList"
+                }
+            },
+            "required": [
+                "required",
+                "planned"
+            ],
+            "additionalProperties": false
+        }
+    }
+}

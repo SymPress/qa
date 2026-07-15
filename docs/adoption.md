@@ -26,6 +26,11 @@ Schema:
 }
 ```
 
+The machine-readable schema is
+[`qa-adoption.schema.json`](qa-adoption.schema.json). Version `1` is required;
+invalid JSON, schema-incompatible data and unsupported versions fail even
+without `--strict`.
+
 Rules:
 
 - `required` gates fail `doctor --strict` when they are not configured.

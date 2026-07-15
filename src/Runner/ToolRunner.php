@@ -17,41 +17,41 @@ final class ToolRunner
     ) {
     }
 
-    public function run(string $gate, PackageContext $context, SymfonyStyle $style): int
+    public function run(string $gate, PackageContext $context, SymfonyStyle $style, bool $strict = false): int
     {
         return match ($gate) {
-            'cs' => $this->runPhpcs($context, $style, false),
-            'cs:fix' => $this->runPhpcs($context, $style, true),
-            'static-analysis' => $this->runPhpstan($context, $style),
-            'tests' => $this->runPhpunit($context, $style),
+            'cs' => $this->runPhpcs($context, $style, false, $strict),
+            'cs:fix' => $this->runPhpcs($context, $style, true, $strict),
+            'static-analysis' => $this->runPhpstan($context, $style, $strict),
+            'tests' => $this->runPhpunit($context, $style, $strict),
             default => Command::FAILURE,
         };
     }
 
-    private function runPhpcs(PackageContext $context, SymfonyStyle $style, bool $fix): int
+    private function runPhpcs(PackageContext $context, SymfonyStyle $style, bool $fix, bool $strict): int
     {
         $packageDir = $context->packageDir();
         $config = $this->configDiscovery->firstExistingFile($packageDir, ['phpcs.xml', 'phpcs.xml.dist']);
         if ($config === null) {
-            return $this->skip($style, 'no PHPCS configuration found');
+            return $this->skip($style, 'no PHPCS configuration found', $strict);
         }
 
-        return $this->runTool($fix ? 'phpcbf' : 'phpcs', ['--standard=' . $config], $context, $style);
+        return $this->runTool($fix ? 'phpcbf' : 'phpcs', ['--standard=' . $config], $context, $style, $strict);
     }
 
-    private function runPhpstan(PackageContext $context, SymfonyStyle $style): int
+    private function runPhpstan(PackageContext $context, SymfonyStyle $style, bool $strict): int
     {
         $packageDir = $context->packageDir();
         $config = $this->configDiscovery->firstExistingFile($packageDir, ['phpstan.neon', 'phpstan.neon.dist']);
         if ($config === null) {
-            return $this->skip($style, 'no PHPStan configuration found');
+            return $this->skip($style, 'no PHPStan configuration found', $strict);
         }
 
         if (
             $this->configDiscovery->usesLocalVendorAutoload($packageDir, $config)
             && !is_readable($packageDir . '/vendor/autoload.php')
         ) {
-            return $this->skip($style, 'no local package vendor/autoload.php found for PHPStan');
+            return $this->skip($style, 'no local package vendor/autoload.php found for PHPStan', $strict);
         }
 
         $missingDependencies = $this->configDiscovery->usesProjectVendorAutoload($packageDir, $config)
@@ -62,18 +62,25 @@ final class ToolRunner
             return $this->skip(
                 $style,
                 sprintf('missing local package dependencies for PHPStan (%s)', implode(', ', $missingDependencies)),
+                $strict,
             );
         }
 
-        return $this->runTool('phpstan', ['analyse', '--memory-limit=1G', '--no-progress', '-c', $config], $context, $style);
+        return $this->runTool(
+            'phpstan',
+            ['analyse', '--memory-limit=1G', '--no-progress', '-c', $config],
+            $context,
+            $style,
+            $strict,
+        );
     }
 
-    private function runPhpunit(PackageContext $context, SymfonyStyle $style): int
+    private function runPhpunit(PackageContext $context, SymfonyStyle $style, bool $strict): int
     {
         $packageDir = $context->packageDir();
         $config = $this->configDiscovery->firstExistingFile($packageDir, ['phpunit.xml', 'phpunit.xml.dist']);
         if ($config === null) {
-            return $this->skip($style, 'no PHPUnit configuration found');
+            return $this->skip($style, 'no PHPUnit configuration found', $strict);
         }
 
         $usesLocalVendorAutoload = $this->configDiscovery->usesLocalVendorAutoload($packageDir, $config);
@@ -81,7 +88,7 @@ final class ToolRunner
         $allowsProjectVendorFallback = $usesProjectVendorAutoload || $this->isQaPackage($packageDir);
 
         if ($usesLocalVendorAutoload && !is_readable($packageDir . '/vendor/autoload.php')) {
-            return $this->skip($style, 'no local package vendor/autoload.php found for PHPUnit');
+            return $this->skip($style, 'no local package vendor/autoload.php found for PHPUnit', $strict);
         }
 
         if (
@@ -89,7 +96,7 @@ final class ToolRunner
             && !$allowsProjectVendorFallback
             && !is_readable($packageDir . '/vendor/autoload.php')
         ) {
-            return $this->skip($style, 'no Composer autoload found for PHPUnit');
+            return $this->skip($style, 'no Composer autoload found for PHPUnit', $strict);
         }
 
         $missingDependencies = $allowsProjectVendorFallback
@@ -99,10 +106,11 @@ final class ToolRunner
             return $this->skip(
                 $style,
                 sprintf('missing local package dependencies for PHPUnit (%s)', implode(', ', $missingDependencies)),
+                $strict,
             );
         }
 
-        return $this->runTool('phpunit', ['--configuration', $config, '--no-coverage'], $context, $style);
+        return $this->runTool('phpunit', ['--configuration', $config, '--no-coverage'], $context, $style, $strict);
     }
 
     private function isQaPackage(string $packageDir): bool
@@ -111,11 +119,17 @@ final class ToolRunner
     }
 
     /** @param list<string> $arguments */
-    private function runTool(string $tool, array $arguments, PackageContext $context, SymfonyStyle $style): int
-    {
+    private function runTool(
+        string $tool,
+        array $arguments,
+        PackageContext $context,
+        SymfonyStyle $style,
+        bool $strict,
+    ): int {
+
         $bin = $this->findTool($tool, $context);
         if ($bin === null) {
-            return $this->skip($style, sprintf('%s is not installed for this package', $tool));
+            return $this->skip($style, sprintf('%s is not installed for this package', $tool), $strict);
         }
 
         $phpArguments = in_array($tool, ['phpcs', 'phpcbf'], true)
@@ -153,10 +167,11 @@ final class ToolRunner
         return null;
     }
 
-    private function skip(SymfonyStyle $style, string $reason): int
+    private function skip(SymfonyStyle $style, string $reason, bool $strict): int
     {
-        $style->writeln(sprintf('<comment>Skipping:</comment> %s.', $reason));
+        $label = $strict ? '<error>FAILED</error>' : '<comment>SKIP</comment>';
+        $style->writeln(sprintf('%s %s.', $label, $reason));
 
-        return Command::SUCCESS;
+        return $strict ? Command::FAILURE : Command::SUCCESS;
     }
 }

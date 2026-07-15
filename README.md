@@ -47,10 +47,14 @@ vendor/bin/qa cs:fix
 vendor/bin/qa static-analysis
 vendor/bin/qa tests
 vendor/bin/qa qa
+vendor/bin/qa qa --strict
 vendor/bin/qa doctor --strict
 ```
 
-Missing PHPStan or PHPUnit configuration is skipped by the runner. Use `doctor --strict` with an adoption file when a package is ready to make a gate mandatory.
+Unavailable gates are visibly reported as `SKIP` by default. Add `--strict` to a
+tool command or to `qa` when an unavailable gate must fail. Use
+`doctor --strict` with an adoption file to verify that required gates are
+configured and referenced by `composer qa`.
 
 ## DevOps Usage
 
@@ -69,6 +73,12 @@ php packages/qa/bin/qa doctor --strict --package=packages/kernel
 ```
 
 `doctor --strict` checks only configured required gates. Missing optional gates are reported as planned work when an adoption file is present; without one, `cs` is the only required default.
+
+The adoption format is defined by
+[`docs/qa-adoption.schema.json`](docs/qa-adoption.schema.json). Invalid JSON,
+schema-incompatible data or an unsupported version always fails instead of
+silently loading defaults. This repository's own `composer qa` runs all gates
+in strict mode.
 
 ## Config Includes
 

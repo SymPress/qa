@@ -1,0 +1,13 @@
+{
+    "$schema": "docs/qa-adoption.schema.json",
+    "version": 1,
+    "defaults": {
+        "required": [
+            "cs",
+            "static-analysis",
+            "tests"
+        ],
+        "planned": []
+    },
+    "packages": {}
+}
