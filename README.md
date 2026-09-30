@@ -16,6 +16,11 @@ composer require --dev sympress/qa
 
 The package intentionally keeps PHPCS, PHPStan, PHPUnit and their extensions in `require`. Downstream packages install `sympress/qa` as a dev dependency and receive the complete QA toolchain transitively.
 
+PHP 8.5 is required. The toolchain uses stable SymPress Coding Standards 1.1
+releases and permits PHPUnit 10.5, 11.5 or 13, according to the consumer's
+constraints. See the [0.1.0 release preparation](docs/releases/0.1.0.md) for
+the verified dependency set and remaining publication steps.
+
 ## Composer Scripts
 
 Recommended package scripts:
