@@ -21,7 +21,7 @@
         "symfony/filesystem": "^8.0",
         "symfony/process": "^8.0",
         "szepeviktor/phpstan-wordpress": "^2.0",
-        "sympress/coding-standards": "^1.0 || dev-main"
+        "sympress/coding-standards": "^1.1"
     },
     "autoload": {
         "psr-4": {
@@ -71,5 +71,6 @@
         "sort-packages": true,
         "optimize-autoloader": true
     },
+    "minimum-stability": "stable",
     "prefer-stable": true
 }
