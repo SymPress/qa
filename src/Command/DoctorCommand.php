@@ -324,7 +324,7 @@ final class DoctorCommand extends AbstractPackageCommand
     {
         $script = implode("\n", $this->scriptCommands($scripts, 'qa'));
 
-        if (str_contains($script, 'qa qa')) {
+        if (str_contains($script, 'qa qa') && in_array($gate, ['cs', 'static-analysis', 'tests'], true)) {
             return true;
         }
 
