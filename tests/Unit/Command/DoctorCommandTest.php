@@ -101,6 +101,22 @@ final class DoctorCommandTest extends TestCase
         self::assertStringContainsString('is not readable', $tester->getDisplay());
     }
 
+    public function testAggregateGateDoesNotImplicitlyRunTheOptInPhpLinter(): void
+    {
+        file_put_contents(
+            $this->workspace . '/composer.json',
+            '{"name":"sympress/fixture","scripts":{"qa":"@php vendor/bin/qa qa --strict","lint:php":"@php vendor/bin/qa lint:php"}}',
+        );
+        file_put_contents(
+            $this->workspace . '/qa-adoption.json',
+            '{"version":1,"defaults":{"required":["lint:php"],"planned":[]},"packages":{}}',
+        );
+        $tester = new CommandTester(ApplicationFactory::create()->find('doctor'));
+
+        self::assertSame(1, $tester->execute(['--package' => $this->workspace, '--strict' => true]));
+        self::assertStringContainsString('required gate is not referenced by composer qa: lint:php', $tester->getDisplay());
+    }
+
     public function testEmptyPackageRequiredListOverridesDefaults(): void
     {
         file_put_contents(

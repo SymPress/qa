@@ -16,6 +16,11 @@ composer require --dev sympress/qa
 
 The package intentionally keeps PHPCS, PHPStan, PHPUnit and their extensions in `require`. Downstream packages install `sympress/qa` as a dev dependency and receive the complete QA toolchain transitively.
 
+PHP 8.5 is required. The toolchain uses stable SymPress Coding Standards 1.1
+releases and permits PHPUnit 10.5, 11.5 or 13, according to the consumer's
+constraints. See the [0.1.0 release preparation](docs/releases/0.1.0.md) for
+the verified dependency set and remaining publication steps.
+
 ## Composer Scripts
 
 Recommended package scripts:
@@ -43,6 +48,8 @@ Packages can still keep custom implementations behind the same script names. CI 
 
 ```bash
 vendor/bin/qa cs
+vendor/bin/qa lint:php
+vendor/bin/qa lint:php --package=packages/example --exclude=tests/site/public
 vendor/bin/qa cs:fix
 vendor/bin/qa static-analysis
 vendor/bin/qa tests
@@ -57,6 +64,15 @@ tool command or to `qa` when an unavailable gate must fail. Use
 configured and referenced by `composer qa`.
 
 ## DevOps Usage
+
+`lint:php` checks package PHP files with the interpreter running QA (`PHP_BINARY`),
+without executing the files. It propagates syntax failures and the interpreter's
+exit code. Dependency, generated-output and cache directories (`vendor`,
+`node_modules`, `.git`, `var`, `build`, `phpstan-cache`, `test-results` and
+`playwright-report`) and symlinks are excluded. Public PHP entrypoints are checked;
+use repeatable `--exclude` options for additional package-relative directories.
+Packages opt in through `"lint:php": "@php vendor/bin/qa lint:php"` and `@lint:php`
+in `composer qa`. The aggregate `qa qa` command keeps its existing three gates.
 
 CI jobs can keep their package-specific behavior simple:
 

@@ -21,7 +21,7 @@
         "symfony/filesystem": "^8.0",
         "symfony/process": "^8.0",
         "szepeviktor/phpstan-wordpress": "^2.0",
-        "sympress/coding-standards": "^1.0 || dev-main"
+        "sympress/coding-standards": "^1.1"
     },
     "autoload": {
         "psr-4": {
@@ -37,6 +37,7 @@
         "bin/qa"
     ],
     "scripts": {
+        "lint:php": "@php bin/qa lint:php",
         "cs": [
             "Composer\\Config::disableProcessTimeout",
             "@php bin/qa cs --strict"
@@ -58,6 +59,7 @@
         ],
         "qa": [
             "@php bin/qa doctor --strict",
+            "@lint:php",
             "@cs",
             "@static-analysis",
             "@tests"
@@ -71,5 +73,6 @@
         "sort-packages": true,
         "optimize-autoloader": true
     },
+    "minimum-stability": "stable",
     "prefer-stable": true
 }

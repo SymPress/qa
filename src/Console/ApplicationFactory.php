@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SymPress\Qa\Console;
 
 use SymPress\Qa\Command\DoctorCommand;
+use SymPress\Qa\Command\LintPhpCommand;
 use SymPress\Qa\Command\QaCommand;
 use SymPress\Qa\Command\ToolCommand;
 use SymPress\Qa\Runner\ToolRunner;
@@ -20,7 +21,8 @@ final class ApplicationFactory
         $configDiscovery = new ConfigDiscovery();
         $toolRunner = new ToolRunner($configDiscovery);
 
-        $application = new Application('SymPress QA', '0.1.0');
+        $application = new Application('SymPress QA', '0.1.1');
+        $application->addCommand(new LintPhpCommand($contextFactory));
         $application->addCommand(new ToolCommand('cs', 'Run PHP_CodeSniffer.', $contextFactory, $toolRunner));
         $application->addCommand(new ToolCommand('cs:fix', 'Fix PHPCS violations with PHPCBF.', $contextFactory, $toolRunner));
         $application->addCommand(new ToolCommand('static-analysis', 'Run PHPStan.', $contextFactory, $toolRunner));
