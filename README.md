@@ -58,7 +58,8 @@ vendor/bin/qa qa --strict
 vendor/bin/qa doctor --strict
 ```
 
-Unavailable gates are visibly reported as `SKIP` by default. Add `--strict` to a
+Local unavailable gates are visibly reported as `SKIP`. CI and GitHub Actions
+fail unavailable enabled gates automatically. Add `--strict` to a local
 tool command or to `qa` when an unavailable gate must fail. Use
 `doctor --strict` with an adoption file to verify that required gates are
 configured and referenced by `composer qa`.
