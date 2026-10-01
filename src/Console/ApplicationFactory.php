@@ -21,7 +21,7 @@ final class ApplicationFactory
         $configDiscovery = new ConfigDiscovery();
         $toolRunner = new ToolRunner($configDiscovery);
 
-        $application = new Application('SymPress QA', '0.1.0');
+        $application = new Application('SymPress QA', '0.1.1');
         $application->addCommand(new LintPhpCommand($contextFactory));
         $application->addCommand(new ToolCommand('cs', 'Run PHP_CodeSniffer.', $contextFactory, $toolRunner));
         $application->addCommand(new ToolCommand('cs:fix', 'Fix PHPCS violations with PHPCBF.', $contextFactory, $toolRunner));
