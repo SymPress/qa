@@ -48,6 +48,8 @@ Packages can still keep custom implementations behind the same script names. CI 
 
 ```bash
 vendor/bin/qa cs
+vendor/bin/qa lint:php
+vendor/bin/qa lint:php --package=packages/example --exclude=tests/site/public
 vendor/bin/qa cs:fix
 vendor/bin/qa static-analysis
 vendor/bin/qa tests
@@ -62,6 +64,15 @@ tool command or to `qa` when an unavailable gate must fail. Use
 configured and referenced by `composer qa`.
 
 ## DevOps Usage
+
+`lint:php` checks package PHP files with the interpreter running QA (`PHP_BINARY`),
+without executing the files. It propagates syntax failures and the interpreter's
+exit code. Dependency, generated-output and cache directories (`vendor`,
+`node_modules`, `.git`, `var`, `build`, `phpstan-cache`, `test-results` and
+`playwright-report`) and symlinks are excluded. Public PHP entrypoints are checked;
+use repeatable `--exclude` options for additional package-relative directories.
+Packages opt in through `"lint:php": "@php vendor/bin/qa lint:php"` and `@lint:php`
+in `composer qa`. The aggregate `qa qa` command keeps its existing three gates.
 
 CI jobs can keep their package-specific behavior simple:
 

@@ -37,6 +37,7 @@
         "bin/qa"
     ],
     "scripts": {
+        "lint:php": "@php bin/qa lint:php",
         "cs": [
             "Composer\\Config::disableProcessTimeout",
             "@php bin/qa cs --strict"
@@ -58,6 +59,7 @@
         ],
         "qa": [
             "@php bin/qa doctor --strict",
+            "@lint:php",
             "@cs",
             "@static-analysis",
             "@tests"
