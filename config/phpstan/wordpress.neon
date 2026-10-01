@@ -4,3 +4,9 @@ includes:
 parameters:
     level: 8
     treatPhpDocTypesAsCertain: false
+
+services:
+    -
+        class: SymPress\Qa\PHPStan\Rules\PreparedSqlRule
+        tags:
+            - phpstan.rules.rule

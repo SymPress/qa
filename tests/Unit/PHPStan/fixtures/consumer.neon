@@ -1,0 +1,6 @@
+includes:
+    - ../../../../config/phpstan/wordpress.neon
+
+parameters:
+    paths:
+        - consumer.php

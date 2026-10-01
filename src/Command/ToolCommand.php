@@ -37,7 +37,7 @@ final class ToolCommand extends AbstractPackageCommand
             $this->gate,
             $this->packageContext($input),
             new SymfonyStyle($input, $output),
-            $input->getOption('strict') === true,
+            $this->strict($input),
         );
     }
 }

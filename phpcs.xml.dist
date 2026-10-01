@@ -15,6 +15,7 @@
     <file>tests</file>
 
     <exclude-pattern>vendor/*</exclude-pattern>
+    <exclude-pattern>tests/Unit/PHPStan/fixtures/*</exclude-pattern>
     <exclude-pattern>.phpunit.cache/*</exclude-pattern>
 
     <rule ref="SymPress-Pure">

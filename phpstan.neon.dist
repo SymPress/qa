@@ -1,5 +1,8 @@
 parameters:
     level: max
+    excludePaths:
+        analyse:
+            - tests/Unit/PHPStan/fixtures/*
     paths:
         - bin/qa
         - src

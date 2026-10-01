@@ -57,6 +57,46 @@ final class ToolRunnerTest extends TestCase
         self::assertSame(7, $exitCode);
     }
 
+    public function testInstalledToolWithoutConfigurationStillFails(): void
+    {
+        self::assertTrue(mkdir($this->workspace . '/vendor/bin', 0777, true));
+        file_put_contents($this->workspace . '/vendor/bin/phpcs', '<?php exit(0);');
+        self::assertSame(1, $this->runGate('cs'));
+    }
+
+    public function testConfigurationWithoutToolFails(): void
+    {
+        file_put_contents($this->workspace . '/phpcs.xml', '<ruleset name="test" />');
+        self::assertSame(1, $this->runGate('cs'));
+    }
+
+    public function testMissingLocalAutoloadFails(): void
+    {
+        file_put_contents($this->workspace . '/phpstan.neon', "parameters:\n    bootstrapFiles:\n        - vendor/autoload.php\n");
+        self::assertSame(1, $this->runGate('static-analysis'));
+    }
+
+    public function testSignaledToolReturnsFailure(): void
+    {
+        if (!function_exists('posix_kill')) {
+            self::markTestSkipped('POSIX signal support required.');
+        }
+        self::assertTrue(mkdir($this->workspace . '/vendor/bin', 0777, true));
+        file_put_contents($this->workspace . '/phpcs.xml', '<ruleset name="test" />');
+        file_put_contents($this->workspace . '/vendor/bin/phpcs', '<?php posix_kill(getmypid(), SIGTERM);');
+        self::assertNotSame(0, $this->runGate('cs'));
+    }
+
+    private function runGate(string $gate): int
+    {
+        return (new ToolRunner(new ConfigDiscovery()))->run(
+            $gate,
+            new PackageContext($this->workspace, $this->workspace),
+            new SymfonyStyle(new ArrayInput([]), new BufferedOutput()),
+            true,
+        );
+    }
+
     private function removeDirectory(string $directory): void
     {
         if (!is_dir($directory)) {

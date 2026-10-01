@@ -103,7 +103,7 @@ final class DoctorCommand extends AbstractPackageCommand
             $style->error($error);
         }
 
-        return $input->getOption('strict') === true ? self::FAILURE : self::SUCCESS;
+        return $this->strict($input) ? self::FAILURE : self::SUCCESS;
     }
 
     /** @return array<string, mixed> */
