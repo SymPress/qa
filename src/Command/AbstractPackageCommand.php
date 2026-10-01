@@ -20,6 +20,13 @@ abstract class AbstractPackageCommand extends Command
         parent::__construct($name);
     }
 
+    protected function strict(InputInterface $input): bool
+    {
+        return $input->getOption('strict') === true
+            || filter_var(getenv('CI'), FILTER_VALIDATE_BOOLEAN)
+            || filter_var(getenv('GITHUB_ACTIONS'), FILTER_VALIDATE_BOOLEAN);
+    }
+
     protected function configurePackageOption(): void
     {
         $this->addOption(

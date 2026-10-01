@@ -35,7 +35,7 @@ final class QaCommand extends AbstractPackageCommand
         $context = $this->packageContext($input);
 
         foreach (['cs', 'static-analysis', 'tests'] as $gate) {
-            $exitCode = $this->toolRunner->run($gate, $context, $style, $input->getOption('strict') === true);
+            $exitCode = $this->toolRunner->run($gate, $context, $style, $this->strict($input));
 
             if ($exitCode !== self::SUCCESS) {
                 return $exitCode;

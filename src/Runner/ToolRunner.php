@@ -8,6 +8,7 @@ use SymPress\Qa\Support\ConfigDiscovery;
 use SymPress\Qa\Support\PackageContext;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Process\Exception\ProcessSignaledException;
 use Symfony\Component\Process\Process;
 
 final class ToolRunner
@@ -137,9 +138,13 @@ final class ToolRunner
             : [];
         $process = new Process(array_merge([PHP_BINARY], $phpArguments, [$bin], $arguments), $context->packageDir());
         $process->setTimeout(null);
-        $process->run(static function (string $type, string $buffer) use ($style): void {
-            $style->write($buffer);
-        });
+        try {
+            $process->run(static function (string $type, string $buffer) use ($style): void {
+                $style->write($buffer);
+            });
+        } catch (ProcessSignaledException) {
+            return $process->getExitCode() ?? Command::FAILURE;
+        }
 
         return $process->getExitCode() ?? Command::FAILURE;
     }

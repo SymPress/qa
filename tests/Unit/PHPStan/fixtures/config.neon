@@ -1,0 +1,3 @@
+parameters:
+    scanFiles:
+        - sql.php
