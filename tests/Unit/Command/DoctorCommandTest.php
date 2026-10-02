@@ -29,14 +29,25 @@ final class DoctorCommandTest extends TestCase
 
     public function testStrictModeTurnsMissingRequiredGateIntoFailure(): void
     {
-        $command = ApplicationFactory::create()->find('doctor');
+        $ciEnvironment = getenv('CI');
+        $githubEnvironment = getenv('GITHUB_ACTIONS');
+        try {
+            // This case explicitly compares local advisory mode with --strict.
+            // CI strictness is exercised separately, so preserve hosted settings.
+            putenv('CI=false');
+            putenv('GITHUB_ACTIONS=false');
+            $command = ApplicationFactory::create()->find('doctor');
 
-        $advisory = new CommandTester($command);
-        self::assertSame(0, $advisory->execute(['--package' => $this->workspace]));
-        self::assertStringContainsString('missing composer qa script', $advisory->getDisplay());
+            $advisory = new CommandTester($command);
+            self::assertSame(0, $advisory->execute(['--package' => $this->workspace]));
+            self::assertStringContainsString('missing composer qa script', $advisory->getDisplay());
 
-        $strict = new CommandTester($command);
-        self::assertSame(1, $strict->execute(['--package' => $this->workspace, '--strict' => true]));
+            $strict = new CommandTester($command);
+            self::assertSame(1, $strict->execute(['--package' => $this->workspace, '--strict' => true]));
+        } finally {
+            putenv($ciEnvironment === false ? 'CI' : 'CI=' . $ciEnvironment);
+            putenv($githubEnvironment === false ? 'GITHUB_ACTIONS' : 'GITHUB_ACTIONS=' . $githubEnvironment);
+        }
     }
 
     public function testInvalidAdoptionFileAlwaysFails(): void
