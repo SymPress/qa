@@ -19,7 +19,7 @@
         "phpunit/phpunit": "^10.5 || ^11.5 || ^13.0",
         "symfony/console": "^8.0",
         "symfony/filesystem": "^8.0",
-        "symfony/process": "^8.0",
+        "symfony/process": "^8.0.5",
         "szepeviktor/phpstan-wordpress": "^2.0",
         "sympress/coding-standards": "^1.1.1"
     },
