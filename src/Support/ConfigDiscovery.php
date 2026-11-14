@@ -70,6 +70,7 @@ final class ConfigDiscovery
             $this->stringKeyArray($composer['require-dev'] ?? null),
         );
         $missing = [];
+        $installed = $this->installedPackageNames($packageDir);
 
         foreach (array_keys($requires) as $packageName) {
             if (!str_starts_with($packageName, 'sympress/')) {
@@ -81,7 +82,7 @@ final class ConfigDiscovery
             }
 
             $vendorName = substr($packageName, strlen('sympress/'));
-            if (is_dir($packageDir . '/vendor/sympress/' . $vendorName)) {
+            if (is_dir($packageDir . '/vendor/sympress/' . $vendorName) || in_array($packageName, $installed, true)) {
                 continue;
             }
 
@@ -89,6 +90,42 @@ final class ConfigDiscovery
         }
 
         return $missing;
+    }
+
+    /**
+     * Packages Composer installed for this package, including those placed outside vendor/ by installer paths
+     * (WordPress plugins and MU plugins).
+     *
+     * @return list<string>
+     */
+    private function installedPackageNames(string $packageDir): array
+    {
+        $installedFile = $packageDir . '/vendor/composer/installed.json';
+        if (!is_readable($installedFile)) {
+            return [];
+        }
+
+        try {
+            $installed = json_decode((string) file_get_contents($installedFile), true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return [];
+        }
+
+        $packages = is_array($installed) ? ($installed['packages'] ?? []) : [];
+        if (!is_array($packages)) {
+            return [];
+        }
+
+        $names = [];
+        foreach ($packages as $package) {
+            if (!is_array($package) || !is_string($package['name'] ?? null)) {
+                continue;
+            }
+
+            $names[] = $package['name'];
+        }
+
+        return $names;
     }
 
     /** @return array<string, mixed> */

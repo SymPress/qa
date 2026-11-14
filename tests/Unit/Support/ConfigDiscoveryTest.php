@@ -91,6 +91,29 @@ XML);
         self::assertSame(['sympress/kernel'], $missing);
     }
 
+    public function testMissingLocalSymPressDependenciesAcceptsPackagesInstalledOutsideVendor(): void
+    {
+        file_put_contents($this->workspace . '/composer.json', json_encode([
+            'require' => [
+                'sympress/kernel'   => '^1.1',
+                'sympress/profiler' => '^1.4',
+                'sympress/mailer'   => '^0.1',
+            ],
+        ], JSON_THROW_ON_ERROR));
+        self::assertTrue(mkdir($this->workspace . '/vendor/sympress/kernel', 0777, true));
+        self::assertTrue(mkdir($this->workspace . '/vendor/composer', 0777, true));
+        file_put_contents($this->workspace . '/vendor/composer/installed.json', json_encode([
+            'packages' => [
+                ['name' => 'sympress/kernel', 'install-path' => '../sympress/kernel'],
+                ['name' => 'sympress/profiler', 'install-path' => '../../public/wp-content/mu-plugins/profiler'],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        $missing = (new ConfigDiscovery())->missingLocalSymPressDependencies($this->workspace);
+
+        self::assertSame(['sympress/mailer'], $missing);
+    }
+
     private function removeDirectory(string $directory): void
     {
         if (!is_dir($directory)) {
