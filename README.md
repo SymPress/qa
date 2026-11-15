@@ -124,6 +124,23 @@ parameters:
         - tests/Support/TestEnvironment.php
 ```
 
+SymPress application code (sites, project plugins and themes built on the kernel) can use
+`app.neon` instead. It includes `wordpress.neon` and adds the kernel's service rules:
+
+```neon
+includes:
+    - vendor/sympress/qa/config/phpstan/app.neon
+```
+
+| Identifier | Reports | Instead |
+| --- | --- | --- |
+| `sympress.hookRegistration` | `add_action()` / `add_filter()` called in a class | `#[AsHook]` or a `kernel.hook` service tag |
+| `sympress.singleton` | a static `$instance`/`$singleton` property or a static `getInstance()` method | a container service, injected |
+| `sympress.containerInjection` | a parameter typed with the Symfony container | the needed services, or a small `Psr\Container\ContainerInterface` locator |
+
+Plugin bootstrap files outside classes may still register hooks. Packages that boot WordPress
+integrations themselves, such as the kernel or Runtime, keep `wordpress.neon`.
+
 `szepeviktor/phpstan-wordpress` is installed by this package and should be loaded through `phpstan/extension-installer`. Consuming packages need to allow the Composer plugin:
 
 ```json
