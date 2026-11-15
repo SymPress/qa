@@ -1,0 +1,4 @@
+parameters:
+    scanFiles:
+        - app-symfony.php
+        - app.php

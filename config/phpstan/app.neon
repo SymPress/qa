@@ -1,0 +1,18 @@
+# SymPress application code: the WordPress profile plus the kernel's service rules.
+# Kernel, Runtime and other boot packages register hooks themselves and keep wordpress.neon.
+includes:
+    - wordpress.neon
+
+services:
+    -
+        class: SymPress\Qa\PHPStan\Rules\HookRegistrationRule
+        tags:
+            - phpstan.rules.rule
+    -
+        class: SymPress\Qa\PHPStan\Rules\SingletonRule
+        tags:
+            - phpstan.rules.rule
+    -
+        class: SymPress\Qa\PHPStan\Rules\ContainerInjectionRule
+        tags:
+            - phpstan.rules.rule

@@ -1,0 +1,8 @@
+includes:
+    - ../../../../config/phpstan/app.neon
+
+parameters:
+    paths:
+        - app-symfony.php
+        - app.php
+        - app-boot.php
