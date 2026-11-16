@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SymPress\Qa\Console;
 
+use Composer\InstalledVersions;
 use SymPress\Qa\Command\DoctorCommand;
 use SymPress\Qa\Command\LintPhpCommand;
 use SymPress\Qa\Command\QaCommand;
@@ -21,7 +22,7 @@ final class ApplicationFactory
         $configDiscovery = new ConfigDiscovery();
         $toolRunner = new ToolRunner($configDiscovery);
 
-        $application = new Application('SymPress QA', '0.1.4');
+        $application = new Application('SymPress QA', self::version());
         $application->addCommand(new LintPhpCommand($contextFactory));
         $application->addCommand(new ToolCommand('cs', 'Run PHP_CodeSniffer.', $contextFactory, $toolRunner));
         $application->addCommand(new ToolCommand('cs:fix', 'Fix PHPCS violations with PHPCBF.', $contextFactory, $toolRunner));
@@ -32,5 +33,11 @@ final class ApplicationFactory
         $application->setDefaultCommand('qa', false);
 
         return $application;
+    }
+
+    /** Installed packages report their release tag; a root checkout reports its branch, e.g. dev-main. */
+    private static function version(): string
+    {
+        return InstalledVersions::isInstalled('sympress/qa') ? (InstalledVersions::getPrettyVersion('sympress/qa') ?? 'UNKNOWN') : 'UNKNOWN';
     }
 }
