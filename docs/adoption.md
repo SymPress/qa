@@ -52,8 +52,11 @@ visible. CI does not turn planned doctor gates into required gates.
 
 Include `vendor/sympress/qa/config/phpstan/wordpress.neon` in the consumer's
 PHPStan configuration. It registers `sympress.preparedSql` for query-bearing
-methods on typed `wpdb` receivers, including properties, aliases and factories.
-Constant SQL and direct typed `wpdb::prepare()` with a constant template pass.
+methods on typed `wpdb` receivers, including properties, aliases and factories,
+and on untyped `global $wpdb` / `$GLOBALS['wpdb']`. Constant SQL and direct
+`wpdb::prepare()` with a constant template pass. Core table-name properties
+(`$wpdb->prefix`, `base_prefix`, `posts`, `options`, `users` …) count as
+constant inside interpolated or concatenated SQL; custom properties do not.
 Unknown SQL variables, interpolated templates, value concatenation and another
 object's `prepare()` fail. Assigned prepared values are conservatively rejected;
 this release does not claim SQL dataflow tracking. Structured insert/update/delete

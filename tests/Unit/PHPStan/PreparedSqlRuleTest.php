@@ -41,4 +41,11 @@ final class PreparedSqlRuleTest extends RuleTestCase
         $message = 'wpdb SQL must be constant SQL or a direct typed wpdb::prepare() call with a constant template; audit dynamic identifiers and raw SQL boundaries explicitly.';
         $this->analyse([__DIR__ . '/fixtures/sql.php'], array_map(static fn (int $line): array => [$message, $line], [19, 20, 21, 22, 23, 24, 25, 26, 35, 37, 38, 39, 40]));
     }
+
+    public function testGlobalWpdbAndTrustedTableNames(): void
+    {
+        require_once __DIR__ . '/fixtures/sql.php';
+        $message = 'wpdb SQL must be constant SQL or a direct typed wpdb::prepare() call with a constant template; audit dynamic identifiers and raw SQL boundaries explicitly.';
+        $this->analyse([__DIR__ . '/fixtures/sql-globals.php'], array_map(static fn (int $line): array => [$message, $line], [6, 7, 13, 14, 15]));
+    }
 }

@@ -9,12 +9,27 @@ use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 use PHPStan\Type\ObjectType;
 use PhpParser\Node;
+use PhpParser\Node\Expr\ArrayDimFetch;
+use PhpParser\Node\Expr\BinaryOp\Concat;
 use PhpParser\Node\Expr\MethodCall;
+use PhpParser\Node\Expr\PropertyFetch;
+use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Identifier;
+use PhpParser\Node\InterpolatedStringPart;
+use PhpParser\Node\Scalar\InterpolatedString;
+use PhpParser\Node\Scalar\String_;
 
 /** @implements Rule<MethodCall> */
 final class PreparedSqlRule implements Rule
 {
+    /** wpdb properties holding trusted table names, safe to interpolate into SQL. */
+    private const array TABLE_PROPERTIES = [
+        'prefix', 'base_prefix',
+        'posts', 'postmeta', 'comments', 'commentmeta', 'terms', 'termmeta', 'term_taxonomy', 'term_relationships',
+        'options', 'links', 'users', 'usermeta',
+        'blogs', 'blogmeta', 'signups', 'site', 'sitemeta', 'registration_log',
+    ];
+
     public function getNodeType(): string
     {
         return MethodCall::class;
@@ -47,7 +62,28 @@ final class PreparedSqlRule implements Rule
             }
         }
 
-        return false;
+        return $this->untypedGlobalWpdb($receiver, $scope);
+    }
+
+    /** `global $wpdb` and `$GLOBALS['wpdb']` are untyped without WordPress type extensions. */
+    private function untypedGlobalWpdb(Node\Expr $receiver, Scope $scope): bool
+    {
+        if ($scope->getType($receiver)->getObjectClassNames() !== []) {
+            return false;
+        }
+
+        return ($receiver instanceof Variable && $receiver->name === 'wpdb')
+            || (
+                $receiver instanceof ArrayDimFetch && $receiver->var instanceof Variable && $receiver->var->name === 'GLOBALS'
+                && $receiver->dim instanceof String_ && $receiver->dim->value === 'wpdb'
+            );
+    }
+
+    private function tableName(Node\Expr $expression, Scope $scope): bool
+    {
+        return $expression instanceof PropertyFetch && $expression->name instanceof Identifier
+            && in_array($expression->name->name, self::TABLE_PROPERTIES, true)
+            && $this->wpdbReceiver($expression->var, $scope);
     }
 
     private function query(MethodCall $call): ?Node\Expr
@@ -63,6 +99,18 @@ final class PreparedSqlRule implements Rule
 
     private function constant(Node\Expr $query, Scope $scope): bool
     {
+        if ($query instanceof InterpolatedString) {
+            return array_all($query->parts, fn (Node $part): bool => $part instanceof InterpolatedStringPart || ($part instanceof Node\Expr && $this->tableName($part, $scope)));
+        }
+
+        if ($query instanceof Concat) {
+            return $this->constant($query->left, $scope) && $this->constant($query->right, $scope);
+        }
+
+        if ($this->tableName($query, $scope)) {
+            return true;
+        }
+
         $type = $scope->getType($query);
 
         return $type->isConstantValue()->yes() && $type->isString()->yes();
@@ -73,7 +121,7 @@ final class PreparedSqlRule implements Rule
         if (
             !$query instanceof MethodCall || !$query->name instanceof Identifier
             || strtolower($query->name->name) !== 'prepare'
-            || !(new ObjectType('wpdb'))->isSuperTypeOf($scope->getType($query->var))->yes()
+            || (!(new ObjectType('wpdb'))->isSuperTypeOf($scope->getType($query->var))->yes() && !$this->untypedGlobalWpdb($query->var, $scope))
         ) {
             return false;
         }
