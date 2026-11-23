@@ -34,7 +34,7 @@ final class PackageContextFactory
         $current = $packageDir;
 
         while ($current !== dirname($current)) {
-            if (is_dir($current . '/packages') && is_file($current . '/composer.json')) {
+            if (is_dir($current . '/packages') && is_file($current . '/composer.json') && $this->ownsPackage($current, $packageDir)) {
                 return $current;
             }
 
@@ -42,5 +42,14 @@ final class PackageContextFactory
         }
 
         return $packageDir;
+    }
+
+    /** Its vendor/bin tools get executed: only trust a monorepo root that holds the package and is not someone else's. */
+    private function ownsPackage(string $projectDir, string $packageDir): bool
+    {
+        $owner = fileowner($projectDir);
+
+        return str_starts_with($packageDir, $projectDir . '/packages/')
+            && $owner !== false && ($owner === 0 || $owner === fileowner($packageDir));
     }
 }

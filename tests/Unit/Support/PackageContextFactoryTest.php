@@ -50,6 +50,20 @@ final class PackageContextFactoryTest extends TestCase
         self::assertSame($packageDir, $context->relativePackageDir());
     }
 
+    public function testAncestorMonorepoIsIgnoredWhenPackageIsNotUnderItsPackagesDir(): void
+    {
+        $ancestorDir = $this->workspace . '/shared';
+        $packageDir = $ancestorDir . '/checkout';
+
+        self::assertTrue(mkdir($ancestorDir . '/packages', 0777, true));
+        self::assertTrue(mkdir($packageDir));
+        file_put_contents($ancestorDir . '/composer.json', '{}');
+
+        $context = (new PackageContextFactory())->fromPath($packageDir);
+
+        self::assertSame($packageDir, $context->projectDir());
+    }
+
     private function removeDirectory(string $directory): void
     {
         if (!is_dir($directory)) {

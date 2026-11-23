@@ -6,7 +6,7 @@ This package does not replace `sympress/coding-standards`. The coding standards 
 
 The runner is a Symfony Console application and uses Symfony Process for tool execution. It is designed to behave the same in a standalone split package, in the SymPress monorepo, and inside CI containers.
 
-When a monorepo root targets a package via `--package`, the runner prefers the root or QA toolchain before a package-local `vendor/bin`. That keeps direct monorepo checks deterministic even when an individual package still has an older local `vendor` directory. PHPCS and PHPCBF are executed with PHP deprecation notices suppressed, so dependency deprecations in coding-standard tooling do not abort scans on newer PHP runtimes.
+When a monorepo root targets a package via `--package`, the runner prefers the root or QA toolchain before a package-local `vendor/bin`. A monorepo root is the nearest ancestor with `composer.json` and `packages/` that contains the package under `packages/` and is owned by the same user (or root); other ancestors are ignored. That keeps direct monorepo checks deterministic even when an individual package still has an older local `vendor` directory. PHPCS and PHPCBF are executed with PHP deprecation notices suppressed, so dependency deprecations in coding-standard tooling do not abort scans on newer PHP runtimes.
 
 ## Installation
 
