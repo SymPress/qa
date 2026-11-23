@@ -22,6 +22,9 @@ final class ContainerInjectionRule implements Rule
 {
     private const CONTAINER = 'Symfony\Component\DependencyInjection\ContainerInterface';
 
+    /** Compiler passes, DI extensions and bundles receive the builder by framework contract. */
+    private const BUILDER = 'Symfony\Component\DependencyInjection\ContainerBuilder';
+
     public function getNodeType(): string
     {
         return InClassMethodNode::class;
@@ -56,6 +59,9 @@ final class ContainerInjectionRule implements Rule
 
     private function isContainer(string $class): bool
     {
-        return (new ObjectType(self::CONTAINER))->isSuperTypeOf(new ObjectType($class))->yes();
+        $type = new ObjectType($class);
+
+        return (new ObjectType(self::CONTAINER))->isSuperTypeOf($type)->yes()
+            && !(new ObjectType(self::BUILDER))->isSuperTypeOf($type)->yes();
     }
 }

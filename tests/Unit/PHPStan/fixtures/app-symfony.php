@@ -20,3 +20,7 @@ class Container implements ContainerInterface
         return false;
     }
 }
+
+class ContainerBuilder extends Container
+{
+}

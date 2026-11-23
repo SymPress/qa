@@ -136,7 +136,7 @@ includes:
 | --- | --- | --- |
 | `sympress.hookRegistration` | `add_action()` / `add_filter()` called in a class | `#[AsHook]` or a `kernel.hook` service tag |
 | `sympress.singleton` | a static `$instance`/`$singleton` property or a static `getInstance()` method | a container service, injected |
-| `sympress.containerInjection` | a parameter typed with the Symfony container | the needed services, or a small `Psr\Container\ContainerInterface` locator |
+| `sympress.containerInjection` | a parameter typed with the Symfony container (`ContainerBuilder` in compiler passes, extensions and bundles is allowed) | the needed services, or a small `Psr\Container\ContainerInterface` locator |
 
 Plugin bootstrap files outside classes may still register hooks. Packages that boot WordPress
 integrations themselves, such as the kernel or Runtime, keep `wordpress.neon`.
