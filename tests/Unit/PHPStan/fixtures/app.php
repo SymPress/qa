@@ -48,3 +48,10 @@ final class Reports
     {
     }
 }
+
+final class TagPass
+{
+    public function process(\Symfony\Component\DependencyInjection\ContainerBuilder $container): void
+    {
+    }
+}

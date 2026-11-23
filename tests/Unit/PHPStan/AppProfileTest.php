@@ -27,7 +27,7 @@ final class AppProfileTest extends TestCase
             $found[] = [$message['identifier'], $message['line']];
         }
 
-        // The PSR locator (line 43) and the plugin bootstrap file stay allowed.
+        // The PSR locator (line 43), the compiler pass's ContainerBuilder (line 54) and the plugin bootstrap file stay allowed.
         self::assertSame([
             ['sympress.hookRegistration', 15],
             ['sympress.hookRegistration', 16],
