@@ -30,6 +30,8 @@ final class PreparedSqlRule implements Rule
         'blogs', 'blogmeta', 'signups', 'site', 'sitemeta', 'registration_log',
     ];
 
+    private const array QUERY_METHODS = ['query', 'get_var', 'get_col', 'get_row', 'get_results'];
+
     public function getNodeType(): string
     {
         return MethodCall::class;
@@ -37,14 +39,16 @@ final class PreparedSqlRule implements Rule
 
     public function processNode(Node $node, Scope $scope): array
     {
-        if (!$node->name instanceof Identifier || !in_array(strtolower($node->name->name), ['query', 'get_var', 'get_col', 'get_row', 'get_results'], true)) {
+        if (!$node->name instanceof Identifier || !in_array(strtolower($node->name->name), self::QUERY_METHODS, true)) {
             return [];
         }
-        if (!$this->wpdbReceiver($node->var, $scope)) {
+        // get_var(), get_col(), get_row() and get_results() are wpdb's own names: check them on any untyped receiver.
+        $wpdbOnlyName = strtolower($node->name->name) !== 'query';
+        if (!$this->wpdbReceiver($node->var, $scope) && !($wpdbOnlyName && $this->untyped($node->var, $scope))) {
             return [];
         }
         $query = $this->query($node);
-        if ($query === null || $this->constant($query, $scope) || $this->prepared($query, $scope)) {
+        if ($query === null || $this->constant($query, $scope, $node->var) || $this->prepared($query, $scope, $node->var)) {
             return [];
         }
 
@@ -65,25 +69,38 @@ final class PreparedSqlRule implements Rule
         return $this->untypedGlobalWpdb($receiver, $scope);
     }
 
-    /** `global $wpdb` and `$GLOBALS['wpdb']` are untyped without WordPress type extensions. */
+    /** `global $wpdb`, `$GLOBALS['wpdb']` and `$this->wpdb` are untyped without WordPress type extensions. */
     private function untypedGlobalWpdb(Node\Expr $receiver, Scope $scope): bool
     {
-        if ($scope->getType($receiver)->getObjectClassNames() !== []) {
+        if (!$this->untyped($receiver, $scope)) {
             return false;
         }
 
         return ($receiver instanceof Variable && $receiver->name === 'wpdb')
+            || ($receiver instanceof PropertyFetch && $receiver->name instanceof Identifier && $receiver->name->name === 'wpdb')
             || (
                 $receiver instanceof ArrayDimFetch && $receiver->var instanceof Variable && $receiver->var->name === 'GLOBALS'
                 && $receiver->dim instanceof String_ && $receiver->dim->value === 'wpdb'
             );
     }
 
-    private function tableName(Node\Expr $expression, Scope $scope): bool
+    private function untyped(Node\Expr $receiver, Scope $scope): bool
+    {
+        return $scope->getType($receiver)->getObjectClassNames() === [];
+    }
+
+    /** An untyped alias such as `$db = $GLOBALS['wpdb']` may supply its own prepare() and table names. */
+    private function sameUntypedAlias(Node\Expr $expression, Scope $scope, Node\Expr $receiver): bool
+    {
+        return $expression instanceof Variable && $receiver instanceof Variable && is_string($expression->name)
+            && $expression->name === $receiver->name && $this->untyped($expression, $scope);
+    }
+
+    private function tableName(Node\Expr $expression, Scope $scope, Node\Expr $receiver): bool
     {
         return $expression instanceof PropertyFetch && $expression->name instanceof Identifier
             && in_array($expression->name->name, self::TABLE_PROPERTIES, true)
-            && $this->wpdbReceiver($expression->var, $scope);
+            && ($this->wpdbReceiver($expression->var, $scope) || $this->sameUntypedAlias($expression->var, $scope, $receiver));
     }
 
     private function query(MethodCall $call): ?Node\Expr
@@ -97,17 +114,17 @@ final class PreparedSqlRule implements Rule
         return null;
     }
 
-    private function constant(Node\Expr $query, Scope $scope): bool
+    private function constant(Node\Expr $query, Scope $scope, Node\Expr $receiver): bool
     {
         if ($query instanceof InterpolatedString) {
-            return array_all($query->parts, fn (Node $part): bool => $part instanceof InterpolatedStringPart || ($part instanceof Node\Expr && $this->tableName($part, $scope)));
+            return array_all($query->parts, fn (Node $part): bool => $part instanceof InterpolatedStringPart || ($part instanceof Node\Expr && $this->tableName($part, $scope, $receiver)));
         }
 
         if ($query instanceof Concat) {
-            return $this->constant($query->left, $scope) && $this->constant($query->right, $scope);
+            return $this->constant($query->left, $scope, $receiver) && $this->constant($query->right, $scope, $receiver);
         }
 
-        if ($this->tableName($query, $scope)) {
+        if ($this->tableName($query, $scope, $receiver)) {
             return true;
         }
 
@@ -116,17 +133,17 @@ final class PreparedSqlRule implements Rule
         return $type->isConstantValue()->yes() && $type->isString()->yes();
     }
 
-    private function prepared(Node\Expr $query, Scope $scope): bool
+    private function prepared(Node\Expr $query, Scope $scope, Node\Expr $receiver): bool
     {
         if (
             !$query instanceof MethodCall || !$query->name instanceof Identifier
             || strtolower($query->name->name) !== 'prepare'
-            || (!(new ObjectType('wpdb'))->isSuperTypeOf($scope->getType($query->var))->yes() && !$this->untypedGlobalWpdb($query->var, $scope))
+            || (!(new ObjectType('wpdb'))->isSuperTypeOf($scope->getType($query->var))->yes() && !$this->untypedGlobalWpdb($query->var, $scope) && !$this->sameUntypedAlias($query->var, $scope, $receiver))
         ) {
             return false;
         }
         $template = $this->query($query);
 
-        return $template !== null && $this->constant($template, $scope);
+        return $template !== null && $this->constant($template, $scope, $receiver);
     }
 }

@@ -53,7 +53,9 @@ visible. CI does not turn planned doctor gates into required gates.
 Include `vendor/sympress/qa/config/phpstan/wordpress.neon` in the consumer's
 PHPStan configuration. It registers `sympress.preparedSql` for query-bearing
 methods on typed `wpdb` receivers, including properties, aliases and factories,
-and on untyped `global $wpdb` / `$GLOBALS['wpdb']`. Constant SQL and direct
+on untyped `global $wpdb` / `$GLOBALS['wpdb']` / `$this->wpdb`, and on any
+untyped receiver for wpdb's own `get_var()`, `get_col()`, `get_row()` and
+`get_results()`. Constant SQL and direct
 `wpdb::prepare()` with a constant template pass. Core table-name properties
 (`$wpdb->prefix`, `base_prefix`, `posts`, `options`, `users` …) count as
 constant inside interpolated or concatenated SQL; custom properties do not.
@@ -63,6 +65,11 @@ this release does not claim SQL dataflow tracking. Structured insert/update/dele
 APIs are unaffected. Vetted dynamic identifiers and explicit raw SQL boundaries
 need a local `@phpstan-ignore sympress.preparedSql` with a review reason and
 parameterization tests. Never ignore this identifier for a whole repository.
+
+Known gaps: `query()` on an untyped alias with another name (`$db->query()`
+after `$db = $GLOBALS['wpdb']`) and first-class callables (`$wpdb->query(...)`)
+are not reported. Type such aliases (`/** @var \wpdb $db */`) so the rule sees
+them.
 
 WPCS remains complementary token-based checking; see coding-standards docs for
 its receiver-name limitation. The pure library PHPStan profile remains unchanged.
