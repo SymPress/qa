@@ -148,4 +148,20 @@ final class DoctorCommandTest extends TestCase
             '--strict'        => true,
         ]));
     }
+
+    public function testFixOnlyScriptDoesNotCountAsCodingStandardsGate(): void
+    {
+        file_put_contents(
+            $this->workspace . '/composer.json',
+            '{"name":"sympress/fixture","scripts":{"qa":["@cs:fix","@php vendor/bin/qa cs:fix"],"cs":"@php vendor/bin/qa cs"}}',
+        );
+        file_put_contents(
+            $this->workspace . '/qa-adoption.json',
+            '{"version":1,"defaults":{"required":["cs"],"planned":[]},"packages":{}}',
+        );
+        $tester = new CommandTester(ApplicationFactory::create()->find('doctor'));
+
+        self::assertSame(1, $tester->execute(['--package' => $this->workspace, '--strict' => true]));
+        self::assertStringContainsString('required gate is not referenced by composer qa: cs', $tester->getDisplay());
+    }
 }
