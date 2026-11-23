@@ -324,21 +324,27 @@ final class DoctorCommand extends AbstractPackageCommand
     {
         $script = implode("\n", $this->scriptCommands($scripts, 'qa'));
 
-        if (str_contains($script, 'qa qa') && in_array($gate, ['cs', 'static-analysis', 'tests'], true)) {
+        if ($this->references($script, 'qa qa') && in_array($gate, ['cs', 'static-analysis', 'tests'], true)) {
             return true;
         }
 
         return match ($gate) {
-            'cs' => str_contains($script, '@cs') || str_contains($script, 'qa cs') || str_contains($script, 'phpcs'),
-            'static-analysis' => str_contains($script, '@static-analysis')
-                || str_contains($script, 'qa static-analysis')
+            'cs' => $this->references($script, '@cs') || $this->references($script, 'qa cs') || str_contains($script, 'phpcs'),
+            'static-analysis' => $this->references($script, '@static-analysis')
+                || $this->references($script, 'qa static-analysis')
                 || str_contains($script, 'phpstan'),
-            'tests' => str_contains($script, '@tests')
-                || str_contains($script, '@test')
-                || str_contains($script, 'qa tests')
+            'tests' => $this->references($script, '@tests')
+                || $this->references($script, '@test')
+                || $this->references($script, 'qa tests')
                 || str_contains($script, 'phpunit'),
-            default => str_contains($script, '@' . $gate) || str_contains($script, 'qa ' . $gate),
+            default => $this->references($script, '@' . $gate) || $this->references($script, 'qa ' . $gate),
         };
+    }
+
+    /** Whole-token match, so `@cs:fix` or `qa cs:fix` do not count as running `cs`. */
+    private function references(string $script, string $command): bool
+    {
+        return preg_match('/' . preg_quote($command, '/') . '(?=\s|$)/m', $script) === 1;
     }
 
     /**
