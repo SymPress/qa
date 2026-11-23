@@ -2,7 +2,8 @@
 
 /.github export-ignore
 /tests export-ignore
-/docs export-ignore
+/docs/** export-ignore
+/docs/qa-adoption.schema.json -export-ignore
 /AGENTS.md export-ignore
 /CONTRIBUTING.md export-ignore
 /qa-adoption.json export-ignore
